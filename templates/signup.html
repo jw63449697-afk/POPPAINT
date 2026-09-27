@@ -1,0 +1,220 @@
+```html
+<!DOCTYPE html>
+<html lang="{{ 'en' if language == 'en' else 'ko' }}">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        {% if language == "en" %}
+            Sign Up - POP PAINT
+        {% else %}
+            회원가입 - POP PAINT
+        {% endif %}
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+</head>
+
+<body>
+
+<header class="header">
+
+    <div class="logo">
+        POP PAINT
+    </div>
+
+    <nav>
+
+        <a href="{{ url_for('index') }}">
+            {% if language == "en" %}
+                Home
+            {% else %}
+                홈
+            {% endif %}
+        </a>
+
+        <a href="{{ url_for('login') }}">
+            {% if language == "en" %}
+                Log in
+            {% else %}
+                로그인
+            {% endif %}
+        </a>
+
+        {% if language == "en" %}
+
+            <a href="{{ url_for('set_language', language='ko') }}">
+                🇰🇷 한국어
+            </a>
+
+        {% else %}
+
+            <a href="{{ url_for('set_language', language='en') }}">
+                🇺🇸 English
+            </a>
+
+        {% endif %}
+
+    </nav>
+
+</header>
+
+
+<main class="main">
+
+    <section class="auth-box">
+
+        <h1>
+            {% if language == "en" %}
+                Create Account
+            {% else %}
+                회원가입
+            {% endif %}
+        </h1>
+
+        <form
+            method="POST"
+            action="{{ url_for('signup') }}"
+        >
+
+            <div class="form-group">
+
+                <label for="username">
+
+                    {% if language == "en" %}
+                        Username
+                    {% else %}
+                        아이디
+                    {% endif %}
+
+                </label>
+
+                <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    minlength="4"
+                    maxlength="20"
+                    pattern="[A-Za-z0-9_]+"
+                    required
+                    autocomplete="username"
+                >
+
+                <small>
+
+                    {% if language == "en" %}
+                        4–20 characters. English letters, numbers, and underscores (_) only.
+                    {% else %}
+                        4~20글자이며 영어, 숫자, 밑줄(_)만 사용할 수 있습니다.
+                    {% endif %}
+
+                </small>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="password">
+
+                    {% if language == "en" %}
+                        Password
+                    {% else %}
+                        비밀번호
+                    {% endif %}
+
+                </label>
+
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    minlength="8"
+                    maxlength="9"
+                    pattern="[A-Za-z0-9_]+"
+                    required
+                    autocomplete="new-password"
+                >
+
+                <small>
+
+                    {% if language == "en" %}
+                        8–9 characters. English letters, numbers, and underscores (_) only.
+                    {% else %}
+                        8~9글자이며 영어, 숫자, 밑줄(_)만 사용할 수 있습니다.
+                    {% endif %}
+
+                </small>
+
+            </div>
+
+
+            <button
+                type="submit"
+                class="button primary"
+            >
+
+                {% if language == "en" %}
+                    Sign Up
+                {% else %}
+                    회원가입
+                {% endif %}
+
+            </button>
+
+        </form>
+
+
+        <div class="auth-link">
+
+            {% if language == "en" %}
+                Already have an account?
+                <a href="{{ url_for('login') }}">
+                    Log in
+                </a>
+            {% else %}
+                이미 계정이 있나요?
+                <a href="{{ url_for('login') }}">
+                    로그인
+                </a>
+            {% endif %}
+
+        </div>
+
+    </section>
+
+</main>
+
+
+{% with messages = get_flashed_messages() %}
+
+    {% if messages %}
+
+        <div class="flash-container">
+
+            {% for message in messages %}
+
+                <div class="flash-message">
+                    {{ message }}
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    {% endif %}
+
+{% endwith %}
+
+</body>
+</html>
+```
