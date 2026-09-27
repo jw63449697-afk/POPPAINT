@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+
+<html lang="{{ 'en' if language == 'en' else 'ko' }}">
+
+<head>
+
+
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
+
+<title>
+    {% if language == "en" %}
+        Draw - POP PAINT
+    {% else %}
+        그림 그리기 - POP PAINT
+    {% endif %}
+</title>
+
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='style.css') }}"
+>
+
+<style>
+
+    .canvas-container {
+        width: 100%;
+        overflow: auto;
+        background: #eeeeee;
+        padding: 15px;
+        border-radius: 15px;
+    }
+
+    #paintCanvas {
+        display: block;
+        background: white;
+        cursor: crosshair;
+        border: 2px solid #222;
+        border-radius: 8px;
+        max-width: 100%;
+        height: auto;
+    }
+
+    .toolbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 15px;
+    }
+
+    .color-tools {
+        display: flex;
+        gap: 8px;
+    }
+
+    .color-button {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        border: 3px solid transparent;
+        cursor: pointer;
+    }
+
+    .color-button.active {
+        border-color: #222;
+        transform: scale(1.1);
+    }
+
+    .tool-button.active {
+        outline: 3px solid #222;
+    }
+
+    .save-area {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .save-area input,
+    .save-area textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 16px;
+        font-family: inherit;
+        box-sizing: border-box;
+    }
+
+    .save-area textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+</style>
+
+
+</head>
+
+<body>
+
+<header class="header">
+
+
+<div class="logo">
+    POP PAINT
+</div>
+
+
+<nav>
+
+    <a href="{{ url_for('index') }}">
+
+        {% if language == "en" %}
+            Home
+        {% else %}
+            홈
+        {% endif %}
+
+    </a>
+
+
+    <a href="{{ url_for('logout') }}">
+
+        {% if language == "en" %}
+            Log out
+        {% else %}
+            로그아웃
+        {% endif %}
+
+    </a>
+
+
+    {% if language == "en" %}
+
+        <a href="{{ url_for('set_language', language='ko') }}">
+            🇰🇷 한국어
+        </a>
+
+    {% else %}
+
+        <a href="{{ url_for('set_language', language='en') }}">
+            🇺🇸 English
+        </a>
+
+    {% endif %}
+
+</nav>
+
+
+</header>
+
+<main class="main">
+
+
+<section class="hero">
+
+
+    {% if language == "en" %}
+
+        <h1>
+            🎨 Draw
+        </h1>
+
+        <p>
+            Create your artwork!
+        </p>
+
+    {% else %}
+
+        <h1>
+            🎨 그림 그리기
+        </h1>
+
+        <p>
+            자유롭게 그림을 그려보세요!
+        </p>
+
+    {% endif %}
+
+
+
+    <div class="welcome">
+
+
+        <!-- ==========================
+             도구
+        =========================== -->
+
+        <div class="toolbar">
+
+
+            <div class="color-tools">
+
+
+                <button
+                    type="button"
+                    class="color-button active"
+                    data-color="#000000"
+                    style="background: #000000;"
+                    aria-label="검정"
+                ></button>
+
+
+                <button
+                    type="button"
+                    class="color-button"
+                    data-color="#0000ff"
+                    style="background: #0000ff;"
+                    aria-label="파랑"
+                ></button>
+
+
+                <button
+                    type="button"
+                    class="color-button"
+                    data-color="#ff0000"
+                    style="background: #ff0000;"
+                    aria-label="빨강"
+                ></button>
+
+
+                <button
+                    type="button"
+                    class="color-button"
+                    data-color="#00aa00"
+                    style="background: #00aa00;"
+                    aria-label="초록"
+                ></button>
+
+
+                <button
+                    type="button"
+                    class="color-button"
+                    data-color="#ffd000"
+                    style="background: #ffd000;"
+                    aria-label="노랑"
+                ></button>
+
+            </div>
+
+
+
+            <!-- 지우개 -->
+
+            <button
+                type="button"
+                id="eraserButton"
+                class="tool-button"
+            >
+
+                {% if language == "en" %}
+                    🧽 Eraser
+                {% else %}
+                    🧽 지우개
+                {% endif %}
+
+            </button>
+
+
+
+            <!-- 전체 지우기 -->
+
+            <button
+                type="button"
+                id="clearButton"
+                class="tool-button danger"
+            >
+
+                {% if language == "en" %}
+                    🗑️ Clear All
+                {% else %}
+                    🗑️ 전체 지우기
+                {% endif %}
+
+            </button>
+
+
+        </div>
+
+
+
+        <!-- ==========================
+             캔버스
+        =========================== -->
+
+        <div class="canvas-container">
+
+            <canvas
+                id="paintCanvas"
+                width="1200"
+                height="700"
+            ></canvas>
+
+        </div>
+
+
+
+        <!-- ==========================
+             저장
+        =========================== -->
+
+        <div class="save-area">
+
+
+            <input
+                type="text"
+                id="drawingTitle"
+                placeholder="{% if language == 'en' %}Drawing title{% else %}그림 제목{% endif %}"
+                maxlength="100"
+            >
+
+
+            <textarea
+                id="drawingDescription"
+                placeholder="{% if language == 'en' %}Description{% else %}그림 설명{% endif %}"
+                maxlength="1000"
+            ></textarea>
+
+
+            <button
+                type="button"
+                id="saveButton"
+                class="button primary"
+            >
+
+                {% if language == "en" %}
+                    💾 Save
+                {% else %}
+                    💾 저장
+                {% endif %}
+
+            </button>
+
+
+        </div>
+
+
+
+        <!-- ==========================
+             현재 도구
+        =========================== -->
+
+        <div class="draw-footer">
+
+            <span id="currentTool">
+
+                {% if language == "en" %}
+                    Current tool: Black pen
+                {% else %}
+                    현재 도구: 검정색 펜
+                {% endif %}
+
+            </span>
+
+        </div>
+
+
+    </div>
+
+</section>
+
+
+</main>
+
+<script>
+
+
+const canvas =
+    document.getElementById("paintCanvas");
+
+
+const ctx =
+    canvas.getContext("2d");
+
+
+const colorButtons =
+    document.querySelectorAll(".color-button");
+
+
+const eraserButton =
+    document.getElementById("eraserButton");
+
+
+const clearButton =
+    document.getElementById("clearButton");
+
+
+const currentTool =
+    document.getElementById("currentTool");
+
+
+const saveButton =
+    document.getElementById("saveButton");
+
+
+const language =
+    "{{ language }}";
+
+
+
+/* ==========================
+   기본 설정
+========================== */
+
+
+let drawing = false;
+
+let currentColor = "#000000";
+
+let isEraser = false;
+
+let brushSize = 5;
+
+
+
+/* ==========================
+   캔버스 초기화
+========================== */
+
+
+ctx.fillStyle = "#ffffff";
+
+ctx.fillRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+);
+
+
+ctx.lineCap = "round";
+
+ctx.lineJoin = "round";
+
+
+
+/* ==========================
+   마우스 위치
+========================== */
+
+
+function getMousePosition(event) {
+
+    const rect =
+        canvas.getBoundingClientRect();
+
+
+    const scaleX =
+        canvas.width / rect.width;
+
+
+    const scaleY =
+        canvas.height / rect.height;
+
+
+    return {
+
+        x:
+            (event.clientX - rect.left)
+            * scaleX,
+
+        y:
+            (event.clientY - rect.top)
+            * scaleY
+
+    };
+
+}
+
+
+
+/* ==========================
+   그리기 시작
+========================== */
+
+
+canvas.addEventListener(
+    "mousedown",
+    function(event) {
+
+        drawing = true;
+
+
+        const position =
+            getMousePosition(event);
+
+
+        ctx.beginPath();
+
+
+        ctx.moveTo(
+            position.x,
+            position.y
+        );
+
+    }
+);
+
+
+
+/* ==========================
+   그리기
+========================== */
+
+
+canvas.addEventListener(
+    "mousemove",
+    function(event) {
+
+        if (!drawing) {
+            return;
+        }
+
+
+        const position =
+            getMousePosition(event);
+
+
+        ctx.lineWidth =
+            brushSize;
+
+
+        ctx.lineTo(
+            position.x,
+            position.y
+        );
+
+
+        if (isEraser) {
+
+            /*
+                진짜 지우개
+                픽셀을 투명하게 삭제
+            */
+
+            ctx.globalCompositeOperation =
+                "destination-out";
+
+        } else {
+
+            ctx.globalCompositeOperation =
+                "source-over";
+
+            ctx.strokeStyle =
+                currentColor;
+
+        }
+
+
+        ctx.stroke();
+
+
+        ctx.beginPath();
+
+
+        ctx.moveTo(
+            position.x,
+            position.y
+        );
+
+    }
+);
+
+
+
+/* ==========================
+   그리기 종료
+========================== */
+
+
+function stopDrawing() {
+
+    drawing = false;
+
+    ctx.beginPath();
+
+}
+
+
+canvas.addEventListener(
+    "mouseup",
+    stopDrawing
+);
+
+
+canvas.addEventListener(
+    "mouseleave",
+    stopDrawing
+);
+
+
+
+/* ==========================
+   색상 변경
+========================== */
+
+
+colorButtons.forEach(
+    function(button) {
+
+        button.addEventListener(
+            "click",
+            function() {
+
+
+                currentColor =
+                    button.dataset.color;
+
+
+                isEraser =
+                    false;
+
+
+                ctx.globalCompositeOperation =
+                    "source-over";
+
+
+                colorButtons.forEach(
+                    function(item) {
+
+                        item.classList.remove(
+                            "active"
+                        );
+
+                    }
+                );
+
+
+                button.classList.add(
+                    "active"
+                );
+
+
+                eraserButton.classList.remove(
+                    "active"
+                );
+
+
+                const colorName =
+                    button.getAttribute(
+                        "aria-label"
+                    );
+
+
+                if (language === "en") {
+
+
+                    const englishNames = {
+
+                        "검정": "Black",
+
+                        "파랑": "Blue",
+
+                        "빨강": "Red",
+
+                        "초록": "Green",
+
+                        "노랑": "Yellow"
+
+                    };
+
+
+                    currentTool.textContent =
+                        "Current tool: " +
+                        englishNames[colorName] +
+                        " pen";
+
+
+                } else {
+
+
+                    currentTool.textContent =
+                        "현재 도구: " +
+                        colorName +
+                        "색 펜";
+
+                }
+
+            }
+        );
+
+    }
+);
+
+
+
+/* ==========================
+   지우개
+========================== */
+
+
+eraserButton.addEventListener(
+    "click",
+    function() {
+
+
+        isEraser =
+            !isEraser;
+
+
+        if (isEraser) {
+
+
+            eraserButton.classList.add(
+                "active"
+            );
+
+
+            colorButtons.forEach(
+                function(item) {
+
+                    item.classList.remove(
+                        "active"
+                    );
+
+                }
+            );
+
+
+            if (language === "en") {
+
+                currentTool.textContent =
+                    "Current tool: Eraser";
+
+            } else {
+
+                currentTool.textContent =
+                    "현재 도구: 지우개";
+
+            }
+
+
+        } else {
+
+
+            eraserButton.classList.remove(
+                "active"
+            );
+
+
+            currentColor =
+                "#000000";
+
+
+            ctx.globalCompositeOperation =
+                "source-over";
+
+
+            colorButtons[0].classList.add(
+                "active"
+            );
+
+
+            if (language === "en") {
+
+                currentTool.textContent =
+                    "Current tool: Black pen";
+
+            } else {
+
+                currentTool.textContent =
+                    "현재 도구: 검정색 펜";
+
+            }
+
+        }
+
+    }
+);
+
+
+
+/* ==========================
+   전체 지우기
+========================== */
+
+
+clearButton.addEventListener(
+    "click",
+    function() {
+
+
+        let message;
+
+
+        if (language === "en") {
+
+            message =
+                "Clear the entire drawing?";
+
+        } else {
+
+            message =
+                "그림을 전부 지울까요?";
+
+        }
+
+
+        if (!confirm(message)) {
+            return;
+        }
+
+
+        ctx.globalCompositeOperation =
+            "source-over";
+
+
+        ctx.fillStyle =
+            "#ffffff";
+
+
+        ctx.fillRect(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+
+    }
+);
+
+
+
+/* ==========================
+   그림 저장
+========================== */
+
+
+saveButton.addEventListener(
+    "click",
+    async function() {
+
+
+        const title =
+            document
+                .getElementById("drawingTitle")
+                .value
+                .trim();
+
+
+        const description =
+            document
+                .getElementById("drawingDescription")
+                .value
+                .trim();
+
+
+
+        if (!title) {
+
+
+            if (language === "en") {
+
+                alert(
+                    "Please enter a drawing title."
+                );
+
+            } else {
+
+                alert(
+                    "그림 제목을 입력해주세요."
+                );
+
+            }
+
+
+            return;
+
+        }
+
+
+
+        const image =
+            canvas.toDataURL("image/png");
+
+
+
+        saveButton.disabled =
+            true;
+
+
+
+        try {
+
+
+            const response =
+                await fetch(
+                    "{{ url_for('save_drawing') }}",
+                    {
+
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body: JSON.stringify({
+
+                            title:
+                                title,
+
+                            description:
+                                description,
+
+                            image:
+                                image
+
+                        })
+
+                    }
+                );
+
+
+
+            const result =
+                await response.json();
+
+
+
+            if (result.success) {
+
+
+                if (language === "en") {
+
+                    alert(
+                        "Drawing saved!"
+                    );
+
+                } else {
+
+                    alert(
+                        "그림이 저장되었습니다!"
+                    );
+
+                }
+
+
+                window.location.href =
+                    "{{ url_for('account_page', username=session['username']) }}";
+
+
+            } else {
+
+
+                alert(
+                    result.message
+                );
+
+            }
+
+
+        } catch (error) {
+
+
+            console.error(error);
+
+
+            if (language === "en") {
+
+                alert(
+                    "Failed to save the drawing."
+                );
+
+            } else {
+
+                alert(
+                    "그림 저장에 실패했습니다."
+                );
+
+            }
+
+
+        } finally {
+
+
+            saveButton.disabled =
+                false;
+
+        }
+
+    }
+);
+
+
+</script>
+
+</body>
+
+</html>
